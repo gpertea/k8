@@ -167,10 +167,24 @@ JS_METHOD(k8_print, args) // print(): print to stdout; TAB demilited if multiple
 		fputs(k8_cstr(str), stdout);
 	}
 	putchar('\n');
+	//fflush(stdout);
 	return v8::Undefined();
 }
 
-JS_METHOD(k8_warn, args) // print(): print to stdout; TAB demilited if multiple arguments are provided
+JS_METHOD(k8_prints, args) {
+  // prints(): print to stdout, without adding newline; TAB demilited if multiple arguments are provided
+	for (int i = 0; i < args.Length(); i++) {
+		v8::HandleScope handle_scope;
+		if (i) putchar('\t');
+		v8::String::AsciiValue str(args[i]);
+		fputs(k8_cstr(str), stdout);
+	}
+	//putchar('\n');
+	//fflush(stdout);
+	return v8::Undefined();
+}
+
+JS_METHOD(k8_warn, args) // warn(): print to stderr; TAB demilited if multiple arguments are provided
 {
 	for (int i = 0; i < args.Length(); i++) {
 		v8::HandleScope handle_scope;
@@ -178,8 +192,37 @@ JS_METHOD(k8_warn, args) // print(): print to stdout; TAB demilited if multiple 
 		v8::String::AsciiValue str(args[i]);
 		fputs(k8_cstr(str), stderr);
 	}
-	fputc('\n', stderr);
+	//fputc('\n', stderr);
+	fflush(stderr);
 	return v8::Undefined();
+}
+
+//Geo extensions: 
+
+JS_METHOD(k8_die, args) { //die(): print message to stderr and exit; space delimited if multiple arguments provided
+  int i;
+  for (i = 0; i < args.Length(); i++) {
+     v8::HandleScope handle_scope;
+     if (i) fputc(' ', stderr);
+     v8::String::AsciiValue str(args[i]);
+     fputs(k8_cstr(str), stderr);
+  }
+  if (i) fputc('\n', stderr);
+  fflush(stdout); fflush(stderr);
+  exit(1);
+  return v8::Undefined();
+}
+
+JS_METHOD(k8_getenv, args) {
+  v8::HandleScope scope;
+  if (args.Length()) {
+    v8::String::AsciiValue s(args[0]);
+    const char *cstr = k8_cstr(s);
+    char* eVal=getenv(*s);
+    if (eVal) return scope.Close(v8::String::New(eVal, strlen(eVal)));
+         else return v8::Null();
+  }
+  else return JS_ERROR("getenv() missing argument");
 }
 
 JS_METHOD(k8_exit, args) // exit()
@@ -190,7 +233,7 @@ JS_METHOD(k8_exit, args) // exit()
 	return v8::Undefined();
 }
 
-JS_METHOD(k8_load, args) // load(): Load and execute a JS file. It also searches ONE path in $K8_LIBRARY_PATH
+JS_METHOD(k8_load, args) // load(): Load and execute a JS file. It also searches ONE path in $K8_PATH
 {
 	char buf[1024], *path = getenv("K8_PATH");
 	FILE *fp;
@@ -776,9 +819,14 @@ static v8::Persistent<v8::Context> CreateShellContext() // adapted from shell.cc
 {
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
 	global->Set(JS_STR("print"), v8::FunctionTemplate::New(k8_print));
+	global->Set(JS_STR("prints"), v8::FunctionTemplate::New(k8_prints));
 	global->Set(JS_STR("warn"), v8::FunctionTemplate::New(k8_warn));
+	global->Set(JS_STR("die"), v8::FunctionTemplate::New(k8_die));
 	global->Set(JS_STR("exit"), v8::FunctionTemplate::New(k8_exit));
 	global->Set(JS_STR("load"), v8::FunctionTemplate::New(k8_load));
+	global->Set(JS_STR("getenv"), v8::FunctionTemplate::New(k8_getenv));
+	//global->Set(JS_STR("getScriptPath"), v8::FunctionTemplate::New(k8_getspath));
+
 	{ // add the 'Bytes' object
 		v8::HandleScope scope;
 		v8::Handle<v8::FunctionTemplate> ft = v8::FunctionTemplate::New(k8_bytes);
