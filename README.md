@@ -3,9 +3,11 @@ FAQ
 
 #### 1. What is K8?
 
-K8 is a Javascript shell based on Google's [V8 Javascript engine][1]. It adds
+K8 (from [attractivechaos/k8][0]) is a Javascript shell based on Google's [V8 Javascript engine][1]. It adds
 the support of flexible byte arrays and file I/O. K8 is implemented in one C++
 source file. The only dependency is zlib in addition to V8.
+
+This fork only aims to add a few small extensions (e.g. the ability to execute external commands, control of shell environment variables) in order to bring the k8 functionality closer to everyday use of other scripting languages like Perl or Python. A few more bioinformatics-focused functions may also be added.
 
 #### 2. There are many Javascript shells with much richer features. What makes K8 special?
 
@@ -189,7 +191,7 @@ Map.prototype.del(key)
 // Deallocate memory
 Map.prototype.destroy()
 ```
-
+[0]: https://github.com/attractivechaos/k8
 [1]: http://code.google.com/p/v8/
 [2]: http://nodejs.org/
 [3]: https://github.com/tlrobinson/narwhal
